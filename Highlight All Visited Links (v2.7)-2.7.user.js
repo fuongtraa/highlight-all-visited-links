@@ -11,8 +11,8 @@
 // @grant        GM_setValue
 // @grant        GM_download
 // @grant        GM_registerMenuCommand
-// @downloadURL  https://github.com/fuongtraa/highlight-all-visited-links/edit/main/Highlight%20All%20Visited%20Links%20(v2.7)-2.7.user.js
-// @updateURL    https://github.com/fuongtraa/highlight-all-visited-links/edit/main/Highlight%20All%20Visited%20Links%20(v2.7)-2.7.user.js
+// @downloadURL  https://github.com/fuongtraa/highlight-all-visited-links/raw/refs/heads/main/Highlight%20All%20Visited%20Links%20(v2.7)-2.7.user.js
+// @updateURL    https://github.com/fuongtraa/highlight-all-visited-links/raw/refs/heads/main/Highlight%20All%20Visited%20Links%20(v2.7)-2.7.user.js
 // @run-at       document-start
 // ==/UserScript==
 
