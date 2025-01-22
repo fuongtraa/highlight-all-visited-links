@@ -5,12 +5,14 @@
 // @description  Highlight visited links, store them persistently, validate links to exclude unwanted patterns, avoid duplicates, and provide options to backup or import link data as JSON.
 // @author       Onii
 // @match        *://*/*
-// @exclude      /^[^:/#?]*:\/\/([^#?/]*\.)?(sonar-cdn|google|facebook|youtube|fbsbx|googletagmanager)\.[a-zA-Z0-9\-]{2,}(:[0-9]{1,5})?\/.*$/
+// @exclude      /^[^:/#?]*:\/\/([^#?/]*\.)?(sonar-cdn|google|facebook|youtube|fbsbx|googletagmanager|chatgpt|github|ssp\.api\.tappx|js\.adscale|dsp-service\.admatic|eus\.rubiconproject|sync\.adprime|rtb\.gumgum)\.[a-zA-Z0-9\-]{2,}(:[0-9]{1,5})?\/.*$/
 // @grant        GM_addStyle
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_download
 // @grant        GM_registerMenuCommand
+// @downloadURL  https://github.com/fuongtraa/highlight-all-visited-links/raw/refs/heads/main/Highlight%20All%20Visited%20Links%20(v2.7)-2.7
+// @updateURL    https://github.com/fuongtraa/highlight-all-visited-links/raw/refs/heads/main/Highlight%20All%20Visited%20Links%20(v2.7)-2.7
 // @run-at       document-start
 // ==/UserScript==
 
@@ -216,3 +218,4 @@
         }
     });
 })();
+
