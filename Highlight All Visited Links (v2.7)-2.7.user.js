@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Highlight All Visited Links (v2.7)
+// @name         Highlight All Visited Links
 // @namespace    http://tampermonkey.net/
-// @version      2.7
+// @version      2.7.1
 // @description  Highlight visited links, store them persistently, validate links to exclude unwanted patterns, avoid duplicates, and provide options to backup or import link data as JSON.
 // @author       Onii
 // @match        *://*/*
@@ -11,8 +11,8 @@
 // @grant        GM_setValue
 // @grant        GM_download
 // @grant        GM_registerMenuCommand
-// @downloadURL  https://github.com/fuongtraa/highlight-all-visited-links/raw/refs/heads/main/Highlight%20All%20Visited%20Links%20(v2.7)-2.7
-// @updateURL    https://github.com/fuongtraa/highlight-all-visited-links/raw/refs/heads/main/Highlight%20All%20Visited%20Links%20(v2.7)-2.7
+// @downloadURL  https://github.com/fuongtraa/highlight-all-visited-links/edit/main/Highlight%20All%20Visited%20Links%20(v2.7)-2.7.user.js
+// @updateURL    https://github.com/fuongtraa/highlight-all-visited-links/edit/main/Highlight%20All%20Visited%20Links%20(v2.7)-2.7.user.js
 // @run-at       document-start
 // ==/UserScript==
 
@@ -218,4 +218,3 @@
         }
     });
 })();
-
