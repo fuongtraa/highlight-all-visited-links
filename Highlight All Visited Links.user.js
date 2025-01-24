@@ -5,7 +5,7 @@
 // @description  Highlight visited links, store them persistently, validate links to exclude unwanted patterns, avoid duplicates, and provide options to backup or import link data as JSON.
 // @author       Onii
 // @match        *://*/*
-// @exclude      /^[^:/#?]*:\/\/([^#?/]*\.)?(sonar-cdn|google|facebook|youtube|fbsbx|googletagmanager|chatgpt|github|ssp\.api\.tappx|js\.adscale|dsp-service\.admatic|eus\.rubiconproject|sync\.adprime|rtb\.gumgum)\.[a-zA-Z0-9\-]{2,}(:[0-9]{1,5})?\/.*$/
+// @exclude      /^[^:/#?]*:\/\/([^#?/]*\.)?(qccoccocmedia|sonar-cdn|google|facebook|youtube|fbsbx|googletagmanager|chatgpt|github|ssp\.api\.tappx|js\.adscale|dsp-service\.admatic|eus\.rubiconproject|sync\.adprime|rtb\.gumgum)\.[a-zA-Z0-9\-]{2,}(:[0-9]{1,5})?\/.*$/
 // @grant        GM_addStyle
 // @grant        GM_getValue
 // @grant        GM_setValue
