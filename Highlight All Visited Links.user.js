@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      2.7.2
 // @description  Highlight visited links, store them persistently, validate links to exclude unwanted patterns, avoid duplicates, and provide options to backup or import link data as JSON.
-// @author       Onii
+// @author       Onii-chan ZS-ExE
 // @match        *://*/*
 // @exclude      /^[^:/#?]*:\/\/([^#?/]*\.)?(qccoccocmedia|sonar-cdn|google|facebook|youtube|fbsbx|googletagmanager|chatgpt|github|ssp\.api\.tappx|js\.adscale|dsp-service\.admatic|eus\.rubiconproject|sync\.adprime|rtb\.gumgum)\.[a-zA-Z0-9\-]{2,}(:[0-9]{1,5})?\/.*$/
 // @grant        GM_addStyle
@@ -61,7 +61,7 @@
     function cleanStorage() {
         visitedTitles = filterBlacklist(visitedTitles);
         visitedAlts = filterBlacklist(visitedAlts);
-        
+
         // Cập nhật lại giá trị đã lọc vào storage
         GM_setValue(visitedTitlesKey, visitedTitles);
         GM_setValue(visitedAltsKey, visitedAlts);
@@ -116,25 +116,25 @@
             const { fullPath } = parsed;
 
             // Kiểm tra nếu link đã tồn tại trong mảng tạm thời hoặc storage
-        if (!tempVisitedLinks.includes(fullPath) && !visitedLinks.includes(fullPath)) {
-            tempVisitedLinks.push(fullPath);
-        }
+            if (!tempVisitedLinks.includes(fullPath) && !visitedLinks.includes(fullPath)) {
+                tempVisitedLinks.push(fullPath);
+            }
 
-        // Kiểm tra nếu title đã tồn tại trong mảng tạm thời hoặc storage
-        if (title && !isBlacklisted(title) && !tempVisitedTitles.includes(title) && !visitedTitles.includes(title)) {
-            tempVisitedTitles.push(title);
-        }
+            // Kiểm tra nếu title đã tồn tại trong mảng tạm thời hoặc storage
+            if (title && !isBlacklisted(title) && !tempVisitedTitles.includes(title) && !visitedTitles.includes(title)) {
+                tempVisitedTitles.push(title);
+            }
 
-        // Kiểm tra nếu alt đã tồn tại trong mảng tạm thời hoặc storage
-        if (alt && !isBlacklisted(alt) && !tempVisitedAlts.includes(alt) && !visitedAlts.includes(alt)) {
-            tempVisitedAlts.push(alt);
-        }
+            // Kiểm tra nếu alt đã tồn tại trong mảng tạm thời hoặc storage
+            if (alt && !isBlacklisted(alt) && !tempVisitedAlts.includes(alt) && !visitedAlts.includes(alt)) {
+                tempVisitedAlts.push(alt);
+            }
 
-        // Clear existing timeout and set a new one to save changes after the delay
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(saveChangesToStorage, saveDelay);
+            // Clear existing timeout and set a new one to save changes after the delay
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveChangesToStorage, saveDelay);
+        }
     }
-}
 
     // Save all accumulated changes to storage
     function saveChangesToStorage() {
@@ -171,16 +171,28 @@
             }
         });
     }
-    // Toggle CSS style
+    // 🌟 Toggle Highlight Style
     function toggleStyle() {
         isStyleEnabled = !isStyleEnabled;
         GM_setValue(highlightEnabledKey, isStyleEnabled);
+
         if (isStyleEnabled) {
             GM_addStyle(highlightStyle);
+            highlightVisitedLinks();
         } else {
-            GM_addStyle('');
+            location.reload(); // OFF thì reload trang
         }
-        highlightVisitedLinks();
+
+        // Cập nhật menu
+        registerHighlightMenu();
+    }
+
+    // 🌟 Cập nhật menu lệnh
+    function registerHighlightMenu() {
+        GM_registerMenuCommand(
+            isStyleEnabled ? "Highlight Style - ON" : "Highlight Style - OFF",
+            toggleStyle
+        );
     }
 
     // View stored data
@@ -259,10 +271,12 @@
     }
 
     // Đăng ký menu lệnh
+    registerHighlightMenu();
     GM_registerMenuCommand('Backup Visited Links', backupVisitedLinks);
     GM_registerMenuCommand('Import Visited Links', importVisitedLinks);
-    GM_registerMenuCommand('Toggle Highlight Style', toggleStyle);
     GM_registerMenuCommand('View Stored Data', viewStoredData);
+
+
 
     // Lưu liên kết khi người dùng nhấp chuột (Left hoặc Middle Click)
     document.addEventListener('click', event => {
