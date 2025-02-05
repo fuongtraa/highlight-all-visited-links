@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Highlight All Visited Links
 // @namespace    http://tampermonkey.net/
-// @version      2.7.1
+// @version      2.7.2
 // @description  Highlight visited links, store them persistently, validate links to exclude unwanted patterns, avoid duplicates, and provide options to backup or import link data as JSON.
 // @author       Onii
 // @match        *://*/*
@@ -22,13 +22,14 @@
     const visitedLinksKey = "strictVisitedLinks";
     const visitedTitlesKey = "strictVisitedTitles";
     const visitedAltsKey = "strictVisitedAlts";
+    const highlightEnabledKey = "highlightEnabled";
 
     let visitedLinks = GM_getValue(visitedLinksKey, []);
     let visitedTitles = GM_getValue(visitedTitlesKey, []);
     let visitedAlts = GM_getValue(visitedAltsKey, []);
+    let isStyleEnabled = GM_getValue(highlightEnabledKey, true);
 
-    // CSS để highlight các liên kết đã truy cập
-    GM_addStyle(`
+    const highlightStyle = `
         a.similar-visited {
             color: red !important;
             font-weight: bold !important;
@@ -41,29 +42,57 @@
     text-decoration: underline !important;
             text-decoration-color: yellow !important;
 }
-    `);
+    `;
+
+    if (isStyleEnabled) {
+        GM_addStyle(highlightStyle);
+    }
+    // Blacklist patterns for title and alt
+    const blacklistKeywords = ['tập', 'Tập', 'episode', 'Episode', 'season', 'Season'];
+
+    // Hàm lọc blacklist
+    function filterBlacklist(dataArray) {
+        return dataArray.filter(item => {
+            return !blacklistKeywords.indexOf(keyword => item.toLowerCase().includes(keyword.toLowerCase()));
+        });
+    }
+
+    // Cập nhật lại dữ liệu đã lưu trong storage để loại bỏ các mục trong blacklist
+    function cleanStorage() {
+        visitedTitles = filterBlacklist(visitedTitles);
+        visitedAlts = filterBlacklist(visitedAlts);
+        
+        // Cập nhật lại giá trị đã lọc vào storage
+        GM_setValue(visitedTitlesKey, visitedTitles);
+        GM_setValue(visitedAltsKey, visitedAlts);
+    }
+
+    // Temporary storage for changes
+    let tempVisitedLinks = [];
+    let tempVisitedTitles = [];
+    let tempVisitedAlts = [];
+
+    // Delay in milliseconds to wait before saving changes
+    const saveDelay = 10000;
+
+    // Timeout for saving changes
+    let saveTimeout;
 
     // Hàm phân tích URL, trích xuất domainName, path và fullPath
-  function parseURL(url) {
-    try {
-        const parsed = new URL(url);
-        const hostnameParts = parsed.hostname.split('.');
-
-        // Lấy phần domain name (bỏ qua TLD)
-        const domainName = hostnameParts.slice(0, -1).join('.'); // Lấy toàn bộ domain trừ TLD
-
-        const path = parsed.pathname;
-        const query = parsed.search; // Lấy query parameters (nếu có)
-
-        // Kết hợp domain, path và query để tạo fullPath
-        const fullPath = `${domainName}${path}${query}`;
-
-        return { domainName, path, fullPath, query };
-    } catch {
-        return null; // URL không hợp lệ
+    function parseURL(url) {
+        try {
+            const parsed = new URL(url);
+            // Lấy phần domain name (bỏ qua TLD)
+            const hostnameParts = parsed.hostname.split('.');
+            const domainName = hostnameParts.length > 2 ? hostnameParts.slice(-3, -2).join('.') : hostnameParts[0]; // Lấy toàn bộ domain trừ TLD
+            const path = parsed.pathname;
+            const query = parsed.search; // Lấy query parameters (nếu có)
+            const fullPath = `${domainName}${path}${query}`;// Kết hợp domain, path và query để tạo fullPath
+            return { domainName, path, fullPath, query };
+        } catch {
+            return null; // URL không hợp lệ
+        }
     }
-}
-
 
     // Kiểm tra tính hợp lệ của URL
     function isValidURL(url) {
@@ -75,52 +104,56 @@
         return !invalidPatterns.some(pattern => pattern.test(url));
     }
 
+    // Kiểm tra alt và title có chứa từ khoá blacklist không
+    function isBlacklisted(text) {
+        return blacklistKeywords.some(keyword => text && text.includes(keyword));
+    }
+
     // Lưu liên kết đã truy cập và loại bỏ trùng lặp
     function saveVisitedLink(url, title, alt) {
         const parsed = parseURL(url);
         if (parsed && isValidURL(url)) {
             const { fullPath } = parsed;
 
-            // Cập nhật chỉ khi có sự thay đổi
-            let shouldUpdateLinks = false;
-            let shouldUpdateTitles = false;
-            let shouldUpdateAlts = false;
-
-            // Kiểm tra và lưu trữ liên kết nếu chưa có
-            if (!visitedLinks.includes(fullPath)) {
-                visitedLinks.push(fullPath);
-                shouldUpdateLinks = true;
-            }
-
-            // Kiểm tra và lưu trữ title nếu chưa có
-            if (title && !visitedTitles.includes(title)) {
-                visitedTitles.push(title);
-                shouldUpdateTitles = true;
-            }
-
-            // Kiểm tra và lưu trữ alt nếu chưa có
-            if (alt && !visitedAlts.includes(alt)) {
-                visitedAlts.push(alt);
-                shouldUpdateAlts = true;
-            }
-
-            // Chỉ cập nhật storage nếu có sự thay đổi
-            if (shouldUpdateLinks) {
-                GM_setValue(visitedLinksKey, visitedLinks);
-            }
-            if (shouldUpdateTitles) {
-                GM_setValue(visitedTitlesKey, visitedTitles);
-            }
-            if (shouldUpdateAlts) {
-                GM_setValue(visitedAltsKey, visitedAlts);
-            }
+            // Kiểm tra nếu link đã tồn tại trong mảng tạm thời hoặc storage
+        if (!tempVisitedLinks.includes(fullPath) && !visitedLinks.includes(fullPath)) {
+            tempVisitedLinks.push(fullPath);
         }
+
+        // Kiểm tra nếu title đã tồn tại trong mảng tạm thời hoặc storage
+        if (title && !isBlacklisted(title) && !tempVisitedTitles.includes(title) && !visitedTitles.includes(title)) {
+            tempVisitedTitles.push(title);
+        }
+
+        // Kiểm tra nếu alt đã tồn tại trong mảng tạm thời hoặc storage
+        if (alt && !isBlacklisted(alt) && !tempVisitedAlts.includes(alt) && !visitedAlts.includes(alt)) {
+            tempVisitedAlts.push(alt);
+        }
+
+        // Clear existing timeout and set a new one to save changes after the delay
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(saveChangesToStorage, saveDelay);
+    }
+}
+
+    // Save all accumulated changes to storage
+    function saveChangesToStorage() {
+        GM_setValue(visitedLinksKey, visitedLinks.concat(tempVisitedLinks));
+        GM_setValue(visitedTitlesKey, visitedTitles.concat(tempVisitedTitles));
+        GM_setValue(visitedAltsKey, visitedAlts.concat(tempVisitedAlts));
+
+        // Clear temporary arrays after saving
+        tempVisitedLinks = [];
+        tempVisitedTitles = [];
+        tempVisitedAlts = [];
+
+        console.log("Visited links data saved successfully!");
     }
 
     // Highlight các liên kết đã truy cập
     function highlightVisitedLinks() {
-        const links = document.querySelectorAll('a');
-        links.forEach(link => {
+        if (!isStyleEnabled) return;
+        document.querySelectorAll('a').forEach(link => {
             const parsed = parseURL(link.href);
             if (parsed) {
                 const { fullPath } = parsed;
@@ -138,14 +171,48 @@
             }
         });
     }
+    // Toggle CSS style
+    function toggleStyle() {
+        isStyleEnabled = !isStyleEnabled;
+        GM_setValue(highlightEnabledKey, isStyleEnabled);
+        if (isStyleEnabled) {
+            GM_addStyle(highlightStyle);
+        } else {
+            GM_addStyle('');
+        }
+        highlightVisitedLinks();
+    }
 
-    // Backup dữ liệu đã lưu
-    function backupVisitedLinks() {
-        const data = JSON.stringify({
+    // View stored data
+    function viewStoredData() {
+        let data = JSON.stringify({
             visitedLinks,
             visitedTitles,
             visitedAlts
         }, null, 2);
+
+        let newData = prompt("Edit stored data (JSON format):", data);
+        if (newData) {
+            try {
+                let parsedData = JSON.parse(newData);
+                visitedLinks = parsedData.visitedLinks || [];
+                visitedTitles = parsedData.visitedTitles || [];
+                visitedAlts = parsedData.visitedAlts || [];
+
+                GM_setValue(visitedLinksKey, visitedLinks);
+                GM_setValue(visitedTitlesKey, visitedTitles);
+                GM_setValue(visitedAltsKey, visitedAlts);
+
+                alert("Data updated successfully!");
+            } catch {
+                alert("Invalid JSON format. Please try again.");
+            }
+        }
+    }
+
+    // Backup dữ liệu đã lưu
+    function backupVisitedLinks() {
+        const data = JSON.stringify({ visitedLinks, visitedTitles, visitedAlts }, null, 2);
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const filename = `visited-links-backup-${timestamp}.json`;
         GM_download({ url: `data:application/json;charset=utf-8,${encodeURIComponent(data)}`, name: filename });
@@ -163,8 +230,13 @@
             reader.onload = e => {
                 try {
                     const importedData = JSON.parse(e.target.result);
-                    if (importedData && Array.isArray(importedData.visitedLinks)) {
-                        // Merge các dữ liệu đã import vào dữ liệu hiện tại
+
+                    if (
+                        importedData &&
+                        Array.isArray(importedData.visitedLinks) &&
+                        Array.isArray(importedData.visitedTitles) &&
+                        Array.isArray(importedData.visitedAlts)
+                    ) {
                         visitedLinks = [...new Set([...visitedLinks, ...importedData.visitedLinks])];
                         visitedTitles = [...new Set([...visitedTitles, ...importedData.visitedTitles])];
                         visitedAlts = [...new Set([...visitedAlts, ...importedData.visitedAlts])];
@@ -189,6 +261,8 @@
     // Đăng ký menu lệnh
     GM_registerMenuCommand('Backup Visited Links', backupVisitedLinks);
     GM_registerMenuCommand('Import Visited Links', importVisitedLinks);
+    GM_registerMenuCommand('Toggle Highlight Style', toggleStyle);
+    GM_registerMenuCommand('View Stored Data', viewStoredData);
 
     // Lưu liên kết khi người dùng nhấp chuột (Left hoặc Middle Click)
     document.addEventListener('click', event => {
@@ -205,15 +279,13 @@
     // Lưu liên kết khi trang được tải và highlight tất cả các liên kết đã truy cập
     window.addEventListener('load', () => {
         saveVisitedLink(window.location.href);
+        cleanStorage();
         highlightVisitedLinks();
     });
 
     // Khi trạng thái visibility của trang thay đổi, cập nhật lại danh sách liên kết
     window.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-            visitedLinks = GM_getValue(visitedLinksKey, []);
-            visitedTitles = GM_getValue(visitedTitlesKey, []);
-            visitedAlts = GM_getValue(visitedAltsKey, []);
             highlightVisitedLinks();
         }
     });
